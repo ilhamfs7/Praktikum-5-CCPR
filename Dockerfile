@@ -1,5 +1,5 @@
 # Menggunakan image resmi PHP 8.2 dengan Apache
-FROM php:8.2-apache
+FROM php:8.3-apache
 
 # Menginstal dependensi sistem yang dibutuhkan Laravel
 RUN apt-get update && apt-get install -y \
