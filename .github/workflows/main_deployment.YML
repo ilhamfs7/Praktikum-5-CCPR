@@ -1,0 +1,51 @@
+name: CI/CD Pipeline to AWS ECS Fargate
+
+# Workflow akan berjalan setiap kali ada push ke branch 'main'
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    name: Build Image and Deploy to ECS
+    runs-on: ubuntu-latest
+
+    steps:
+    # Tahap 1: Checkout Code
+    - name: Checkout Source Code
+      uses: actions/checkout@v3
+
+    # Tahap 2: Authentication ke AWS
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    # Login ke Amazon ECR
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    # Tahap 3: Build & Push Image ke ECR
+    - name: Build, tag, and push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: portal-pegawai-repo # Pastikan nama ini sesuai dengan di AWS ECR Anda
+        IMAGE_TAG: latest
+      run: |
+        echo "Memulai proses build Docker image..."
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        echo "Mendorong image ke Amazon ECR..."
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    # Tahap 4: Deploy ke Serverless Container (ECS Fargate)
+    - name: Force New Deployment on Amazon ECS
+      env:
+        CLUSTER_NAME: portal-pegawai-cluster
+        SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+      run: |
+        echo "Memerintahkan ECS untuk menarik image terbaru dan merestart kontainer..."
+        aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
