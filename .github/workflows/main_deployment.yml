@@ -33,7 +33,7 @@ jobs:
     - name: Build, tag, and push image to Amazon ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: portal-pegawai-repo # Pastikan nama ini sesuai dengan di AWS ECR Anda
+        ECR_REPOSITORY: repo-portal-pegawai # Pastikan nama ini sesuai dengan di AWS ECR Anda
         IMAGE_TAG: latest
       run: |
         echo "Memulai proses build Docker image..."
